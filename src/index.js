@@ -25,10 +25,9 @@ const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
     origin: "*", // allow all origins (adjust for prod)
-    methods: ["GET", "POST"]
-  }
+    methods: ["GET", "POST"],
+  },
 });
-
 io.on("connection", (socket) => {
   console.log(`Client connected: ${socket.id}`);
 
@@ -36,7 +35,23 @@ io.on("connection", (socket) => {
     const { roomId } = checkOrJsonify(payload) || {};
     socket.join(roomId);
     console.log(`${socket.id} joined room: ${roomId}`);
-    socket.to(roomId).emit("new-user", socket.id);
+
+    const clientsInRoom = io.sockets.adapter.rooms.get(roomId) || new Set();
+    const otherClients = Array.from(clientsInRoom).filter(
+      (id) => id !== socket.id
+    );
+
+    if (otherClients.length > 0) {
+      // Notify the new client that others are present
+      socket.emit("existing-users", otherClients);
+      // Notify others that a new client has joined
+      socket.to(roomId).emit("new-user", socket.id);
+    }
+  });
+
+  socket.on('existing-users', (users) => {
+    print("Existing users: $users");
+    // If you're the second one to join, wait for offer from the first
   });
 
   socket.on("signal", (payload) => {
@@ -81,7 +96,6 @@ io.on("connection", (socket) => {
     console.log(`Client disconnected: ${socket.id}`);
   });
 });
-
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
