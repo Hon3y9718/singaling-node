@@ -1,0 +1,8 @@
+version: "3.8"
+services:
+  signaling-server:
+    build: .
+    ports:
+      - "3000:4003"
+    container_name: signaling
+    restart: unless-stopped
