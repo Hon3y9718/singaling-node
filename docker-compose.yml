@@ -3,6 +3,6 @@ services:
   signaling-server:
     build: .
     ports:
-      - "3000:4003"
+      - "4003:3000"
     container_name: signaling
     restart: unless-stopped
